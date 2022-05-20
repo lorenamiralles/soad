@@ -10,6 +10,7 @@ class Server:
         self.work_queue = []
         self.processing_queue = []
         self.return_queue = []
+        self.nodes = []
 
     def listen(self):
         s = socket.socket()  # Create a socket object
@@ -32,6 +33,7 @@ class Server:
                 return
             elif res == 'job':
                 data = json.loads((c.recv(1024)).decode())
+                matrix_id = data.get("id")
                 matrix_a = data.get("a")
                 matrix_b = data.get("c")
             else:

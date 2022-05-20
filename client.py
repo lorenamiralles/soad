@@ -15,7 +15,8 @@ class Client:
 		while True:
 			msg = input('> ')
 			s.send(bytes(msg, 'utf-8'))
+			# id = 123
 			# a = [[1, 2], [3,4]]
 			# b = [[4, 5], [6,7]]
-			# data = json.dumps({"a": a, "b": b})
+			# data = json.dumps({"id": id, "a": a, "b": b})
 			# s.send(data.encode())
