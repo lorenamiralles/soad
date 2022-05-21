@@ -8,15 +8,19 @@ class Server:
 		self.server_ip = server_ip
 		self.server_port = server_port
 		self.waiting = []
-		self.processing = []
+		self.sending = []
+		self.processing = {}  # dictionary
 		self.done = []
 		self.workers = []
+		self.clients = []
 
 	def listen(self):
-		thread_divide = Thread(target=divide_job, args=((self),))
-		thread_send = Thread(target=send_job, args=((self),))
-		thread_divide.start()
-		thread_send.start()
+		thread_divide_job = Thread(target=divide_job, args=((self),))
+		thread_start_job = Thread(target=start_job, args=((self),))
+		thread_finish_job = Thread(target=finish_job, args=((self),))
+		thread_divide_job.start()
+		thread_start_job.start()
+		thread_finish_job.start()
 
 		server_socket = socket.socket()  # Create a socket object
 		server_socket.bind((self.server_ip, self.server_port))  # Bind to the port
@@ -28,9 +32,9 @@ class Server:
 			# thread.daemon = False
 			thread_dispatch.start()
 
-		# thread_divide.join()
+	# thread_divide_job.join()
 
-	def client_thread(self, c):
+	def client_receive(self, c):
 		print('client thread')
 		while True:
 			res = (c.recv(1024)).decode()
@@ -40,26 +44,44 @@ class Server:
 				return
 			elif res == 'job':
 				data = json.loads((c.recv(1024)).decode())
+				client_ip = data.get("ip")
+				client_port = data.get("port")
 				matrix_id = data.get("id")
 				matrix_a = data.get("a")
 				matrix_b = data.get("b")
-				self.waiting.append([matrix_id, matrix_a, matrix_b])
+				self.waiting.append([client_ip, client_port, matrix_id, matrix_a, matrix_b])
 			else:
 				print('	unknown command')
 
-	def worker_thread(self, c):
+	def worker_thread(self, con):
 		print('worker thread')
 		while True:
-			res = c.recv(1024)
+			res = con.recv(1024)
 			print(res)
 			if res == 'exit':
 				print('	worker exited')
 				return
 			elif res == 'ready':
-				data = json.loads((c.recv(1024)).decode())
+				data = json.loads((con.recv(1024)).decode())
 				worker_ip = data.get("ip")
 				worker_port = data.get("port")
 				self.workers.append([worker_ip, worker_port])
+			elif res == 'done':
+				data = json.loads((con.recv(1024)).decode())
+				matrix_id = data.get("matrix_id")
+				c_n = data.get("c_n")
+				c_m = data.get("c_m")
+				c_i = data.get("c_i")
+				c_j = data.get("c_j")
+				chunk_c = data.get("chunk_c")
+				self.processing[matrix_id][2] += 1
+				self.processing[matrix_id][3][c_i][c_j] = chunk_c
+				if self.processing[matrix_id][2] == c_n * c_m:
+					client_ip = self.processing[matrix_id][0]
+					client_port = self.processing[matrix_id][1]
+					matrix_c = self.processing[matrix_id][3]
+					self.done.append([client_ip, client_port, matrix_id, matrix_c])
+					self.processing.pop(matrix_id)
 
 
 def dispatch_connection(arg):
@@ -68,7 +90,7 @@ def dispatch_connection(arg):
 	sender = con.recv(1024)
 	if sender == b'c':
 		print('request from client')
-		server.client_thread(con)
+		server.client_receive(con)
 	elif sender == b'w':
 		print('request from worker')
 		server.worker_thread(con)
@@ -82,9 +104,11 @@ def divide_job(arg):
 	while True:
 		if len(server.waiting) > 0:
 			job = server.waiting.pop(0)
-			matrix_id = job[0]
-			matrix_a = job[1]
-			matrix_b = job[2]
+			client_ip = job[0]
+			client_port = job[1]
+			matrix_id = job[2]
+			matrix_a = job[3]
+			matrix_b = job[4]
 			rows_a = len(matrix_a)
 			cols_a = len(matrix_a[0])
 			rows_b = len(matrix_b)
@@ -103,21 +127,38 @@ def divide_job(arg):
 						for b_j in range(cols_b):
 							if b_j != c_j:
 								chunk_b[b_i][b_j] = 0
-					server.processing.append(json.dumps({
+					server.sending.append(json.dumps({
 						"matrix_id": matrix_id,
 						"c_i": c_i,
 						"c_j": c_j,
 						"chunk_a": chunk_a,
 						"chunk_b": chunk_b
 					}))
+			matrix_c = [[0] * rows_c, [0] * cols_c]
+			server.processing[matrix_id] = [client_ip, client_port, 0, matrix_c]
 
 
-def send_job(arg):
+def start_job(arg):
 	server = arg[0]
 	while True:
-		if len(server.processing) > 0 and len(server.workers) > 0:
+		if len(server.sending) > 0 and len(server.workers) > 0:
 			worker = server.workers.pop(0)
-			socket_to_worker = socket.socket()  # Create a socket object
-			socket_to_worker.connect((worker.worker_ip, worker.worker_port))  # Bind to the port
-			job = server.processing.pop(0)
+			job = server.sending.pop(0)
+			socket_to_worker = socket.socket()
+			socket_to_worker.connect((worker[0], worker[1]))
 			socket_to_worker.send(job.encode())
+
+
+def finish_job(arg):
+	server = arg[0]
+	while True:
+		if len(server.done) > 0:
+			job = server.done.pop(0)
+			client_ip = job[0]
+			client_port = job[1]
+			matrix_id = job[2]
+			matrix_c = job[3]
+			socket_to_client = socket.socket()
+			socket_to_client.connect((client_ip, client_port))
+			response = json.dumps({"id": matrix_id, "c": matrix_c})
+			socket_to_client.send(response.encode())
