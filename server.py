@@ -69,17 +69,17 @@ class Server:
 			elif res == 'done':
 				data = json.loads((con.recv(1024)).decode())
 				matrix_id = data.get("matrix_id")
-				c_n = data.get("c_n")
-				c_m = data.get("c_m")
 				c_i = data.get("c_i")
 				c_j = data.get("c_j")
 				chunk_c = data.get("chunk_c")
 				self.processing[matrix_id][2] += 1
 				self.processing[matrix_id][3][c_i][c_j] = chunk_c
+				matrix_c = self.processing[matrix_id][3]
+				c_n = len(matrix_c)
+				c_m = len(matrix_c[0])
 				if self.processing[matrix_id][2] == c_n * c_m:
 					client_ip = self.processing[matrix_id][0]
 					client_port = self.processing[matrix_id][1]
-					matrix_c = self.processing[matrix_id][3]
 					self.done.append([client_ip, client_port, matrix_id, matrix_c])
 					self.processing.pop(matrix_id)
 
