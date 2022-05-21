@@ -37,12 +37,12 @@ class Server:
 	def client_receive(self, c):
 		print('client thread')
 		while True:
-			res = (c.recv(1024)).decode()
-			print(res)
-			if res == 'exit':
+			req = (c.recv(1024)).decode()
+			print(req)
+			if req == 'exit':
 				print('	client exited')
 				return
-			elif res == 'job':
+			elif req == 'job':
 				data = json.loads((c.recv(1024)).decode())
 				client_ip = data.get("ip")
 				client_port = data.get("port")
