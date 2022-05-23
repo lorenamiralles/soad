@@ -41,18 +41,18 @@ class Client:
 				# DO trabajito
 				a = self.trabajito.get("chunk_a")
 				b = self.trabajito.get("chunk_b")
-				ci = self.trabajito.get("c_i")
-				cj = self.trabajito.get("c_j")
+				c_i = self.trabajito.get("c_i")
+				c_j = self.trabajito.get("c_j")
 
 				suma = 0
 
 				for i in range(len(a)):
-					suma += a[ci][i] * b[i][cj]
+					suma += a[c_i][i] * b[i][c_j]
 				
 				result = {"matrix_id": self.trabajito.get("matrix_id"),
 						  "chunk_c": suma,
-						  "c_i": ci,
-						  "c_j": cj,
+						  "c_i": c_i,
+						  "c_j": c_j,
 						  }
 				
 				self.result = result
