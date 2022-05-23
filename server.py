@@ -17,7 +17,7 @@ class Server:
 
 	def listen(self):
 		thread_divide_job = Thread(target=divide_job, args=((self),))
-		thread_start_job = Thread(target=start_job, args=((self),))
+		thread_start_job = Thread(target=start_job, args=(self,))
 		thread_finish_job = Thread(target=finish_job, args=((self),))
 		thread_divide_job.start()
 		thread_start_job.start()
@@ -33,15 +33,16 @@ class Server:
 			# thread.daemon = False
 			thread_dispatch.start()
 
-	# thread_divide_job.join()
+		thread_divide_job.join()
 
 	def client_receive(self, c):
 		print('client thread')
-		while True:
+		while self.listening:
 			req = (c.recv(1024)).decode()
 			print(req)
 			if req == 'exit':
 				print('	client exited')
+				self.listening = False
 				return
 			elif req == 'job':
 				data = json.loads((c.recv(1024)).decode())
@@ -56,7 +57,7 @@ class Server:
 
 	def worker_thread(self, con):
 		print('worker thread')
-		while True:
+		while self.listening:
 			res = con.recv(1024)
 			print(res)
 			if res == 'exit':
@@ -85,7 +86,7 @@ class Server:
 def dispatch_connection(arg):
 	server = arg[0]
 	con = arg[1]
-	sender = con.recv(4).decode()
+	sender = con.recv(1).decode()
 	if sender == 'c':
 		print('request from client')
 		server.client_receive(con)
@@ -98,7 +99,7 @@ def dispatch_connection(arg):
 
 
 def divide_job(server):
-	while True:
+	while server.listening:
 		if len(server.waiting) > 0:
 			job = server.waiting.pop(0)
 			client_ip = job[0]
@@ -136,7 +137,7 @@ def divide_job(server):
 
 
 def start_job(server):
-	while True:
+	while server.listening:
 		if len(server.sending) > 0 and len(server.workers) > 0:
 			worker = server.workers.pop(0)
 			job = server.sending.pop(0)
@@ -146,7 +147,7 @@ def start_job(server):
 
 
 def finish_job(server):
-	while True:
+	while server.listening:
 		if len(server.done) > 0:
 			job = server.done.pop(0)
 			client_ip = job[0]
