@@ -2,7 +2,6 @@ import socket
 import json
 from threading import Thread
 
-from matplotlib.font_manager import json_dump
 
 class Worker:
 	def __init__(self, server_ip, server_port, node_port):
@@ -21,21 +20,22 @@ class Worker:
 		
 		self.s = socket.socket()  # Create a socket object
 		self.s.connect((self.server_ip, self.server_port))  # Bind to the port
-		self.s.sendall(b'n')
+		self.s.send(b'w')
 
 		thread = Thread(target=dispatch_connection, args=((self, "receive"),))
 		thread.start()
 		thread2 = Thread(target=dispatch_connection, args=((self, "send"),))
 		thread2.start()
-
-		self.trabajaLeches()
-
-		thread.join()
-		thread2.join()
-
+		try:
+			self.trabajaLeches()
+		except KeyboardInterrupt:
+			self.noExit = False
+			self.s.send(b'exit')
+			self.s.close()
+			thread.join()
+			thread2.join()
 
 	def trabajaLeches(self):
-
 		while self.noExit:
 			if self.trabajito != None:
 				# DO trabajito
@@ -70,10 +70,9 @@ class Worker:
 	def mandaCositas(self):
 		while self.noExit:
 			if self.trabajito == None:
-				self.s.sendall(b'w')
 				self.s.sendall(b'ready')
-				self.s.sendall(b'w')
 			if self.result != None:
+				self.s.sendall(b'done')
 				self.s.sendall(json.dumps(self.result).encode())
 				self.result = None
 
