@@ -38,24 +38,21 @@ class Client:
 	def connect(self):
 		s = socket.socket()  # Create a socket object
 		s.connect((self.server_ip, self.server_port))  # Bind to the port
-		s.send(b'c')
+		s.sendall(b'c')
 		while True:
 			inp = input('> ')
 			if inp == 'exit':
-				s.send(bytes('exit', 'utf-8'))
+				s.sendall(bytes('exit', 'utf-8'))
 				exit()
 
-			if inp[0] == '/':
-				directory = inp
-			else:
-				directory = os.path.join(os.getcwd(), inp)
+			directory = os.getcwd()
 			files = os.listdir(directory)
 
 			if not ('A.txt' in files and 'B.txt' in files):
 				self.print_usage()
 				continue
 			
-			matrix_a, inp_error = self.read_matrix_file(os.path.join(directory,'A.txt'))
+			matrix_a, inp_error = self.read_matrix_file(os.path.join(directory, 'A.txt'))
 			if inp_error:
 				self.print_usage()
 				continue
@@ -66,5 +63,5 @@ class Client:
 				continue
 			
 			job_data = json.dumps({'id': directory, 'a': matrix_a, 'b': matrix_b})
-			s.send('job')
-			s.send(job_data.encode())
+			s.sendall(b'job')
+			s.sendall(job_data.encode())

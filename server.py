@@ -13,6 +13,7 @@ class Server:
 		self.done = []
 		self.workers = []
 		self.clients = []
+		self.listening = True
 
 	def listen(self):
 		thread_divide_job = Thread(target=divide_job, args=((self),))
@@ -25,7 +26,7 @@ class Server:
 		server_socket = socket.socket()  # Create a socket object
 		server_socket.bind((self.server_ip, self.server_port))  # Bind to the port
 		server_socket.listen(5)  # Now wait for client connection.
-		while True:
+		while self.listening:
 			connection, addr = server_socket.accept()  # Establish connection with client.
 			print('Got connection from', addr)
 			thread_dispatch = Thread(target=dispatch_connection, args=((self, connection),))
@@ -100,7 +101,7 @@ def dispatch_connection(arg):
 
 
 def divide_job(arg):
-	server = arg[0]
+	server = arg
 	while True:
 		if len(server.waiting) > 0:
 			job = server.waiting.pop(0)
@@ -139,18 +140,18 @@ def divide_job(arg):
 
 
 def start_job(arg):
-	server = arg[0]
+	server = arg
 	while True:
 		if len(server.sending) > 0 and len(server.workers) > 0:
 			worker = server.workers.pop(0)
 			job = server.sending.pop(0)
 			socket_to_worker = socket.socket()
 			socket_to_worker.connect((worker[0], worker[1]))
-			socket_to_worker.send(job.encode())
+			socket_to_worker.sendall(job.encode())
 
 
 def finish_job(arg):
-	server = arg[0]
+	server = arg
 	while True:
 		if len(server.done) > 0:
 			job = server.done.pop(0)
@@ -161,4 +162,4 @@ def finish_job(arg):
 			socket_to_client = socket.socket()
 			socket_to_client.connect((client_ip, client_port))
 			response = json.dumps({"id": matrix_id, "c": matrix_c})
-			socket_to_client.send(response.encode())
+			socket_to_client.sendall(response.encode())

@@ -4,7 +4,7 @@ from threading import Thread
 
 from matplotlib.font_manager import json_dump
 
-class Client:
+class Worker:
 	def __init__(self, server_ip, server_port, node_port):
 		self.server_ip = server_ip
 		self.node_port = node_port
@@ -21,7 +21,7 @@ class Client:
 		
 		self.s = socket.socket()  # Create a socket object
 		self.s.connect((self.server_ip, self.server_port))  # Bind to the port
-		self.s.send(b'n')
+		self.s.sendall(b'n')
 
 		thread = Thread(target=dispatch_connection, args=((self, "receive"),))
 		thread.start()
