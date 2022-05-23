@@ -62,10 +62,7 @@ class Server:
 				print('	worker exited')
 				return
 			elif res == 'ready':
-				data = json.loads((con.recv(1024)).decode())
-				worker_ip = data.get("ip")
-				worker_port = data.get("port")
-				self.workers.append([worker_ip, worker_port])
+				self.workers.append([con])
 			elif res == 'done':
 				data = json.loads((con.recv(1024)).decode())
 				matrix_id = data.get("matrix_id")

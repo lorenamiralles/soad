@@ -21,7 +21,7 @@ class Client:
 		
 		self.s = socket.socket()  # Create a socket object
 		self.s.connect((self.server_ip, self.server_port))  # Bind to the port
-		self.s.send(b'n')
+		self.s.send(b'w')
 
 		thread = Thread(target=dispatch_connection, args=((self, "receive"),))
 		thread.start()
@@ -70,10 +70,9 @@ class Client:
 	def mandaCositas(self):
 		while self.noExit:
 			if self.trabajito == None:
-				self.s.sendall(b'w')
 				self.s.sendall(b'ready')
-				self.s.sendall(b'w')
 			if self.result != None:
+				self.s.sendall(b'done')
 				self.s.sendall(json.dumps(self.result).encode())
 				self.result = None
 
