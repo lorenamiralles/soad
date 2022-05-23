@@ -27,15 +27,16 @@ class Client:
 		thread.start()
 		thread2 = Thread(target=dispatch_connection, args=((self, "send"),))
 		thread2.start()
-
-		self.trabajaLeches()
-
-		thread.join()
-		thread2.join()
-
+		try:
+			self.trabajaLeches()
+		except KeyboardInterrupt:
+			self.noExit = False
+			self.s.send(b'exit')
+			self.s.close()
+			thread.join()
+			thread2.join()
 
 	def trabajaLeches(self):
-
 		while self.noExit:
 			if self.trabajito != None:
 				# DO trabajito
