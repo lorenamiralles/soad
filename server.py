@@ -85,11 +85,11 @@ class Server:
 def dispatch_connection(arg):
 	server = arg[0]
 	con = arg[1]
-	sender = con.recv(1024)
-	if sender == b'c':
+	sender = con.recv(4).decode()
+	if sender == 'c':
 		print('request from client')
 		server.client_receive(con)
-	elif sender == b'w':
+	elif sender == 'w':
 		print('request from worker')
 		server.worker_thread(con)
 	else:
@@ -97,8 +97,7 @@ def dispatch_connection(arg):
 	con.close()  # Close the connection
 
 
-def divide_job(arg):
-	server = arg
+def divide_job(server):
 	while True:
 		if len(server.waiting) > 0:
 			job = server.waiting.pop(0)
@@ -136,8 +135,7 @@ def divide_job(arg):
 			server.processing[matrix_id] = [client_ip, client_port, 0, matrix_c]
 
 
-def start_job(arg):
-	server = arg
+def start_job(server):
 	while True:
 		if len(server.sending) > 0 and len(server.workers) > 0:
 			worker = server.workers.pop(0)
@@ -147,8 +145,7 @@ def start_job(arg):
 			socket_to_worker.sendall(job.encode())
 
 
-def finish_job(arg):
-	server = arg
+def finish_job(server):
 	while True:
 		if len(server.done) > 0:
 			job = server.done.pop(0)

@@ -1,7 +1,7 @@
 import socket
 import json
 from threading import Thread
-
+import time
 
 class Worker:
 	def __init__(self, server_ip, server_port, node_port):
@@ -16,11 +16,12 @@ class Worker:
 
 		self.noExit = True
 
+
 	def connect(self):
 		
-		self.s = socket.socket()  # Create a socket object
+		self.s = socket.socket().  # Create a socket object
 		self.s.connect((self.server_ip, self.server_port))  # Bind to the port
-		self.s.send(b'w')
+		self.s.sendall(b'w')
 
 		thread = Thread(target=dispatch_connection, args=((self, "receive"),))
 		thread.start()
@@ -30,7 +31,7 @@ class Worker:
 			self.trabajaLeches()
 		except KeyboardInterrupt:
 			self.noExit = False
-			self.s.send(b'exit')
+			self.s.sendall(b'exit')
 			self.s.close()
 			thread.join()
 			thread2.join()
@@ -69,6 +70,8 @@ class Worker:
 
 	def mandaCositas(self):
 		while self.noExit:
+			time.sleep(1)
+
 			if self.trabajito == None:
 				self.s.sendall(b'ready')
 			if self.result != None:
