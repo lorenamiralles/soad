@@ -17,12 +17,13 @@ class Client:
 		|                     AN ERROR OCCURED WITH YOUR JOB REQUEST                      |
 		|_________________________________________________________________________________|
 		|                                                                                 |
-		| Matrix multiplications directory must contain tow files named A.txt and B.txt   |
+		| Matrix multiplications directories must contain two files named A.txt and B.txt |
 		| each of them having the corresponding matrices encoded as ascii files of        |
 		| single-space separated values, each row having the same number of elements and  |
 		| representing a row of the matrix.                                               |
 		| For obvious reasons (common knowledge on matrix multiplication) A.txt must have |
 		| the same number of columns as rows has B.txt.                                   |
+		| In a single job you can input a list of target directories separated by commas. |
 		|_________________________________________________________________________________|
 		""")
 
@@ -34,6 +35,10 @@ class Client:
 			if any(len(matrix[0]) != len(row) for row in matrix):
 				inp_error = True
 		return matrix, inp_error
+	
+	def write_matrix_file(self, filepath, matrix):
+		with open(filepath, 'w') as file_out:
+			file_out.write('/n'.join([' '.join(row) for row in matrix]))
 
 	def connect(self):
 		s = socket.socket()  # Create a socket object
@@ -75,4 +80,5 @@ class Client:
 			# Await responses of job.
 			for i in range(len(matrix_directories)):
 				response = json.loads((s.recv(1024)).decode())
-				print(f'Response #{i}: ', response)
+				print(f'Response #{i} arrived')
+				self.write_matrix_file(os.path.join(response['id'], 'out.txt'), response['result'])
