@@ -1,7 +1,7 @@
 import socket
 import json
 import os
-
+import asyncio
 
 class Client:
 	def __init__(self, server_ip, server_port, client_port):
@@ -13,16 +13,16 @@ class Client:
 		print(
 			"""
 		___________________________________________________________________________________
-		|																				  |
-		|					   AN ERROR OCCURED WITH YOUR JOB REQUEST					  |
+		|                                                                                 |
+		|                     AN ERROR OCCURED WITH YOUR JOB REQUEST                      |
 		|_________________________________________________________________________________|
-		|																				  |
+		|                                                                                 |
 		| Matrix multiplications directory must contain tow files named A.txt and B.txt   |
-		| each of them having the corresponding matrices encoded as ascii files of 		  |
+		| each of them having the corresponding matrices encoded as ascii files of        |
 		| single-space separated values, each row having the same number of elements and  |
-		| representing a row of the matrix.												  |
+		| representing a row of the matrix.                                               |
 		| For obvious reasons (common knowledge on matrix multiplication) A.txt must have |
-		| the same number of columns as rows has B.txt.									  |
+		| the same number of columns as rows has B.txt.                                   |
 		|_________________________________________________________________________________|
 		""")
 
@@ -44,24 +44,35 @@ class Client:
 			if inp == 'exit':
 				s.sendall(bytes('exit', 'utf-8'))
 				exit()
+			
+			matrix_directories = [d.strip() for d in inp.split(',')]
 
-			directory = os.getcwd()
-			files = os.listdir(directory)
+			# Send all directories to server to compute matrix multiplications.
+			for directory in matrix_directories:
+				if directory[0] != '/':
+					directory = os.path.join(os.getcwd(), directory)
+				files = os.listdir(directory)
+				print(directory)
 
-			if not ('A.txt' in files and 'B.txt' in files):
-				self.print_usage()
-				continue
+				if not ('A.txt' in files and 'B.txt' in files):
+					self.print_usage()
+					continue
 
-			matrix_a, inp_error = self.read_matrix_file(os.path.join(directory, 'A.txt'))
-			if inp_error:
-				self.print_usage()
-				continue
+				matrix_a, inp_error = self.read_matrix_file(os.path.join(directory, 'A.txt'))
+				if inp_error:
+					self.print_usage()
+					continue
 
-			matrix_b, inp_error = self.read_matrix_file(os.path.join(directory, 'B.txt'))
-			if inp_error:
-				self.print_usage()
-				continue
+				matrix_b, inp_error = self.read_matrix_file(os.path.join(directory, 'B.txt'))
+				if inp_error:
+					self.print_usage()
+					continue
 
-			job_data = json.dumps({'id': directory, 'a': matrix_a, 'b': matrix_b})
-			s.sendall(b'job')
-			s.sendall(job_data.encode())
+				job_data = json.dumps({'id': directory, 'a': matrix_a, 'b': matrix_b})
+				s.sendall(b'job')
+				s.sendall(job_data.encode())
+			
+			# Await responses of job.
+			for i in range(len(matrix_directories)):
+				response = json.loads((s.recv(1024)).decode())
+				print(f'Response #{i}: ', response)
