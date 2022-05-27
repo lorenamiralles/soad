@@ -9,14 +9,17 @@ class Client:
 		self.client_port = client_port
 		self.server_port = server_port
 
-	def print_usage(self):
+	def print_usage(self, message):
 		print(
 			"""
-		___________________________________________________________________________________
+		 _________________________________________________________________________________
 		|                                                                                 |
 		|                     AN ERROR OCCURED WITH YOUR JOB REQUEST                      |
-		|_________________________________________________________________________________|
-		|                                                                                 |
+		|_________________________________________________________________________________|""")
+		print(f"""
+		  Error message: {message} """)
+		print("""                                                                                
+		 _________________________________________________________________________________
 		| Matrix multiplications directories must contain two files named A.txt and B.txt |
 		| each of them having the corresponding matrices encoded as ascii files of        |
 		| single-space separated values, each row having the same number of elements and  |
@@ -60,17 +63,23 @@ class Client:
 				print(directory)
 
 				if not ('A.txt' in files and 'B.txt' in files):
-					self.print_usage()
+					self.print_usage(f'Directory {directory} has missing files: A.txt or B.txt.')
 					continue
 
-				matrix_a, inp_error = self.read_matrix_file(os.path.join(directory, 'A.txt'))
+				file_path_a = os.path.join(directory, 'A.txt')
+				matrix_a, inp_error = self.read_matrix_file(file_path_a)
 				if inp_error:
-					self.print_usage()
+					self.print_usage(f'File {file_path_a} has bad format.')
 					continue
 
-				matrix_b, inp_error = self.read_matrix_file(os.path.join(directory, 'B.txt'))
+				file_path_b = os.path.join(directory, 'B.txt')
+				matrix_b, inp_error = self.read_matrix_file(file_path_b)
 				if inp_error:
-					self.print_usage()
+					self.print_usage(f'File {file_path_b} has bad format.')
+					continue
+
+				if (len(matrix_a[0]) != len(matrix_b)):
+					self.print_usage(f'Matrices in directory {directory} cannot be multiplied.')
 					continue
 
 				job_data = json.dumps({'id': directory, 'a': matrix_a, 'b': matrix_b})
@@ -80,5 +89,6 @@ class Client:
 			# Await responses of job.
 			for i in range(len(matrix_directories)):
 				response = json.loads((s.recv(1024)).decode())
-				print(f'Response #{i} arrived')
-				self.write_matrix_file(os.path.join(response['id'], 'out.txt'), response['result'])
+				directory = response['id']
+				print(f'Response #{i}: Job finished for directory: {directory}')
+				self.write_matrix_file(os.path.join(directory, 'OUT.txt'), response['c'])
