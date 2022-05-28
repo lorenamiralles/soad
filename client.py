@@ -54,32 +54,40 @@ class Client:
 				exit()
 			
 			matrix_directories = [d.strip() for d in inp.split(',')]
+			bad_directories = 0
 
 			# Send all directories to server to compute matrix multiplications.
 			for directory in matrix_directories:
 				if directory[0] != '/':
 					directory = os.path.join(os.getcwd(), directory)
+				if not os.path.exists(directory):
+					bad_directories += 1
+					continue
 				files = os.listdir(directory)
 				print(directory)
 
 				if not ('A.txt' in files and 'B.txt' in files):
 					self.print_usage(f'Directory {directory} has missing files: A.txt or B.txt.')
+					bad_directories += 1
 					continue
 
 				file_path_a = os.path.join(directory, 'A.txt')
 				matrix_a, inp_error = self.read_matrix_file(file_path_a)
 				if inp_error:
 					self.print_usage(f'File {file_path_a} has bad format.')
+					bad_directories += 1
 					continue
 
 				file_path_b = os.path.join(directory, 'B.txt')
 				matrix_b, inp_error = self.read_matrix_file(file_path_b)
 				if inp_error:
 					self.print_usage(f'File {file_path_b} has bad format.')
+					bad_directories += 1
 					continue
 
 				if (len(matrix_a[0]) != len(matrix_b)):
 					self.print_usage(f'Matrices in directory {directory} cannot be multiplied.')
+					bad_directories += 1
 					continue
 
 				job_data = json.dumps({'id': directory, 'a': matrix_a, 'b': matrix_b})
@@ -87,7 +95,7 @@ class Client:
 				s.sendall(job_data.encode())
 			
 			# Await responses of job.
-			for i in range(len(matrix_directories)):
+			for i in range(len(matrix_directories)-bad_directories):
 				response = json.loads((s.recv(1024)).decode())
 				directory = response['id']
 				print(f'Response #{i}: Job finished for directory: {directory}')
