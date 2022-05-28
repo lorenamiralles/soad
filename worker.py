@@ -45,7 +45,6 @@ class Worker:
 
 	def mandaCositas(self):
 		while self.noExit:
-
 			self.s.sendall(b'ready')
 			if doDEBUG:
 				print("Sent ready")
@@ -62,10 +61,12 @@ class Worker:
 			c_j = self.trabajito.get("c_j")
 
 			suma = 0
-
+			print('a: ', a)
+			print('b: ', b)
+			print('c_i: ', c_i)
+			print('c_j: ', c_j)
 			for i in range(len(a)):
 				suma += a[c_i][i] * b[i][c_j]
-			
 			
 			result = {"matrix_id": self.trabajito.get("matrix_id"),
 						"chunk_c": suma,
@@ -78,6 +79,8 @@ class Worker:
 			self.s.sendall(b'done')
 			if doDEBUG:
 				print("Sent done")
+			time.sleep(1)
 			self.s.sendall(json.dumps(result).encode())
 			if doDEBUG:
 				print("Sent result")
+			time.sleep(1)

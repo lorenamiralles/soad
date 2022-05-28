@@ -32,24 +32,37 @@ class Client:
 
 	def read_matrix_file(self, filepath):
 		inp_error = False
-		matrix = []
 		with open(filepath, 'r') as file_a:
-			matrix = [row.split(' ') for row in file_a.readlines()]
+			data = file_a.read()
+			rows = data.split("\n")
+			matrix = []
+			for row in rows:
+				new_row = []
+				for j in row.split(" "):
+					new_row.append(float(j))
+				matrix.append(new_row)
 			if any(len(matrix[0]) != len(row) for row in matrix):
 				inp_error = True
 		return matrix, inp_error
 	
 	def write_matrix_file(self, filepath, matrix):
 		with open(filepath, 'w') as file_out:
-			file_out.write('/n'.join([' '.join(row) for row in matrix]))
+			txt = ""
+			for row in matrix:
+				for item in row:
+					txt += str(item) + " "
+				txt += "\n"
+			file_out.write(txt)
 
 	def connect(self):
 		s = socket.socket()  # Create a socket object
 		s.connect((self.server_ip, self.server_port))  # Bind to the port
+		print('sending c')
 		s.sendall(b'c')
 		while True:
 			inp = input('> ')
 			if inp == 'exit':
+				print('sending exit')
 				s.sendall(bytes('exit', 'utf-8'))
 				exit()
 			
@@ -91,7 +104,9 @@ class Client:
 					continue
 
 				job_data = json.dumps({'id': directory, 'a': matrix_a, 'b': matrix_b})
+				print('sending job')
 				s.sendall(b'job')
+				print('sending data')
 				s.sendall(job_data.encode())
 			
 			# Await responses of job.
