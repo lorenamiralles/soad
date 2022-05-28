@@ -58,12 +58,14 @@ class Client:
 		s = socket.socket()  # Create a socket object
 		s.connect((self.server_ip, self.server_port))  # Bind to the port
 		print('sending c')
-		s.sendall(b'c')
+		s.send(b'c')
+		s.recv(1024)
 		while True:
 			inp = input('> ')
 			if inp == 'exit':
 				print('sending exit')
-				s.sendall(bytes('exit', 'utf-8'))
+				s.send(b'exit')
+				s.recv(1024)
 				exit()
 			
 			matrix_directories = [d.strip() for d in inp.split(',')]
@@ -105,9 +107,11 @@ class Client:
 
 				job_data = json.dumps({'id': directory, 'a': matrix_a, 'b': matrix_b})
 				print('sending job')
-				s.sendall(b'job')
+				s.send(b'job')
+				s.recv(1024)
 				print('sending data')
-				s.sendall(job_data.encode())
+				s.send(job_data.encode())
+				s.recv(1024)
 			
 			# Await responses of job.
 			for i in range(len(matrix_directories)-bad_directories):

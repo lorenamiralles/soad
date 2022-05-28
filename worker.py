@@ -6,16 +6,13 @@ import time
 doDEBUG = True
 
 class Worker:
-	def __init__(self, server_ip, server_port, node_port):
+	def __init__(self, server_ip, server_port, worker_port):
 		self.server_ip = server_ip
-		self.node_port = node_port
+		self.worker_port = worker_port
 		self.server_port = server_port
-
 		self.trabajito = None
 		self.result = None
-		
 		self.s = None
-
 		self.noExit = True
 
 	def connect(self):
@@ -25,9 +22,9 @@ class Worker:
 
 		if doDEBUG:
 			print("Connected to server")
-		
 
-		self.s.sendall(b'w')
+		self.s.send(b'w')
+		self.s.recv(1024)
 		if doDEBUG:
 			print("Sent w")
 		try:
@@ -36,7 +33,8 @@ class Worker:
 			self.mandaCositas()
 		except KeyboardInterrupt:
 			self.noExit = False
-			self.s.sendall(b'exit')
+			self.s.send(b'exit')
+			self.s.recv(1024)
 			if doDEBUG:
 				print("Sent exit")
 			self.s.close()
@@ -45,7 +43,8 @@ class Worker:
 
 	def mandaCositas(self):
 		while self.noExit:
-			self.s.sendall(b'ready')
+			self.s.send(b'ready')
+			self.s.recv(1024)
 			if doDEBUG:
 				print("Sent ready")
 			data = json.loads((self.s.recv(1024)).decode())
@@ -76,11 +75,11 @@ class Worker:
 			if doDEBUG:
 				print("Computed result")
 				print("Result:", suma)
-			self.s.sendall(b'done')
+			self.s.send(b'done')
+			self.s.recv(1024)
 			if doDEBUG:
 				print("Sent done")
-			time.sleep(1)
-			self.s.sendall(json.dumps(result).encode())
+			self.s.send(json.dumps(result).encode())
+			self.s.recv(1024)
 			if doDEBUG:
 				print("Sent result")
-			time.sleep(1)
