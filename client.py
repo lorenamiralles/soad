@@ -59,13 +59,13 @@ class Client:
 		s.connect((self.server_ip, self.server_port))  # Bind to the port
 		print('sending c')
 		s.send(b'c')
-		s.recv(1024)
+		s.recv(1024*1000)
 		while True:
 			inp = input('> ')
 			if inp == 'exit':
 				print('sending exit')
 				s.send(b'exit')
-				s.recv(1024)
+				s.recv(1024*1000)
 				exit()
 			
 			matrix_directories = [d.strip() for d in inp.split(',')]
@@ -108,14 +108,14 @@ class Client:
 				job_data = json.dumps({'id': directory, 'a': matrix_a, 'b': matrix_b})
 				print('sending job')
 				s.send(b'job')
-				s.recv(1024)
+				s.recv(1024*1000)
 				print('sending data')
 				s.send(job_data.encode())
-				s.recv(1024)
+				s.recv(1024*1000)
 			
 			# Await responses of job.
 			for i in range(len(matrix_directories)-bad_directories):
-				response = json.loads((s.recv(1024)).decode())
+				response = json.loads((s.recv(1024*1000)).decode())
 				directory = response['id']
 				print(f'Response #{i}: Job finished for directory: {directory}')
 				self.write_matrix_file(os.path.join(directory, 'OUT.txt'), response['c'])

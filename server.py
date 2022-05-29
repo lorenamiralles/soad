@@ -31,7 +31,7 @@ class Server:
 		while self.listening:
 			connection, addr = server_socket.accept()  # Establish connection with client.
 			print('Got connection from', addr)
-			print('accept connection: ', connection)
+			# print('accept connection: ', connection)
 			thread_dispatch = Thread(target=dispatch_connection, args=((self, connection),))
 			# thread.daemon = False
 			thread_dispatch.start()
@@ -41,8 +41,8 @@ class Server:
 	def client_receive(self, client_con):
 		print('client thread')
 		while self.listening:
-			print('client connection 1: ', client_con)
-			req = (client_con.recv(1024)).decode()
+			# print('client connection 1: ', client_con)
+			req = (client_con.recv(1024*1000)).decode()
 			client_con.send(b'ok')
 			print('client command', req)
 			if req == 'exit':
@@ -51,8 +51,8 @@ class Server:
 				return
 			elif req == 'job':
 				print(' appending job')
-				print('client connection 2: ', client_con)
-				data = json.loads((client_con.recv(1024)).decode())
+				# print('client connection 2: ', client_con)
+				data = json.loads((client_con.recv(1024*1000)).decode())
 				client_con.send(b'ok')
 				matrix_id = data.get("id")
 				matrix_a = data.get("a")
@@ -71,8 +71,8 @@ class Server:
 	def worker_thread(self, worker_con):
 		print('worker thread')
 		while self.listening:
-			print('worker connection 1: ', worker_con)
-			res = worker_con.recv(1024).decode()
+			# print('worker connection 1: ', worker_con)
+			res = worker_con.recv(1024*1000).decode()
 			worker_con.send(b'ok')
 			print('worker command', res)
 			if res == 'exit':
@@ -83,12 +83,10 @@ class Server:
 				self.workers.append(worker_con)
 			elif res == 'done':
 				print('	worker done')
-				print('worker connection 2: ', worker_con)
-				data_bytes = (worker_con.recv(1024))
+				# print('worker connection 2: ', worker_con)
+				data = json.loads(worker_con.recv(1024*1000).decode())
 				worker_con.send(b'ok')
-				data_json = data_bytes.decode()
-				print(data_json)
-				data = json.loads(data_json)
+				print('worker data: ', data)
 				matrix_id = data.get("matrix_id")
 				c_i = data.get("c_i")
 				c_j = data.get("c_j")
@@ -97,7 +95,7 @@ class Server:
 				print('count: ', self.processing[matrix_id][1])
 				self.processing[matrix_id][1] += 1
 				self.processing[matrix_id][2][c_i][c_j] = chunk_c
-				matrix_c = self.processing[matrix_id][2]
+				matrix_c = deepcopy(self.processing[matrix_id][2])
 				c_n = len(matrix_c)
 				c_m = len(matrix_c[0])
 				print('matrix_c: ', matrix_c)
@@ -148,8 +146,13 @@ def divide_job(server):
 			print('matrix_b',matrix_b)
 			print('rows_c: ', rows_c)
 			print('cols_c: ', cols_c)
-			matrix_c = [[0] * cols_c] * rows_c
-			server.processing[matrix_id] = [con, 0, matrix_c]
+			matrix_c = []
+			for i in range(rows_c):
+				new_row = []
+				for j in range(cols_c):
+					new_row.append(0.0)
+				matrix_c.append(new_row)
+			server.processing[matrix_id] = [con, 0, deepcopy(matrix_c)]
 			for c_i in range(rows_c):
 				for c_j in range(cols_c):
 					chunk_a = deepcopy(matrix_a)
@@ -181,7 +184,7 @@ def start_job(server):
 			print('sending job to worker')
 			worker_con = server.workers.pop(0)
 			job = server.sending.pop(0)
-			print('worker connection 3: ', worker_con)
+			# print('worker connection 3: ', worker_con)
 			worker_con.send(job.encode())
 
 
@@ -194,5 +197,5 @@ def finish_job(server):
 			matrix_id = job[1]
 			matrix_c = job[2]
 			response = json.dumps({"id": matrix_id, "c": matrix_c})
-			print('client connection 3: ', client_con)
+			# print('client connection 3: ', client_con)
 			client_con.send(response.encode())

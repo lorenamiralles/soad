@@ -24,7 +24,7 @@ class Worker:
 			print("Connected to server")
 
 		self.s.send(b'w')
-		self.s.recv(1024)
+		self.s.recv(1024*1000)
 		if doDEBUG:
 			print("Sent w")
 		try:
@@ -34,7 +34,7 @@ class Worker:
 		except KeyboardInterrupt:
 			self.noExit = False
 			self.s.send(b'exit')
-			self.s.recv(1024)
+			self.s.recv(1024*1000)
 			if doDEBUG:
 				print("Sent exit")
 			self.s.close()
@@ -44,10 +44,10 @@ class Worker:
 	def mandaCositas(self):
 		while self.noExit:
 			self.s.send(b'ready')
-			self.s.recv(1024)
+			self.s.recv(1024*1000)
 			if doDEBUG:
 				print("Sent ready")
-			data = json.loads((self.s.recv(1024)).decode())
+			data = json.loads((self.s.recv(1024*1000)).decode())
 			if doDEBUG:
 				print("Received data")
 				print(data)
@@ -76,10 +76,10 @@ class Worker:
 				print("Computed result")
 				print("Result:", suma)
 			self.s.send(b'done')
-			self.s.recv(1024)
+			self.s.recv(1024*1000)
 			if doDEBUG:
 				print("Sent done")
 			self.s.send(json.dumps(result).encode())
-			self.s.recv(1024)
+			self.s.recv(1024*1000)
 			if doDEBUG:
 				print("Sent result")
