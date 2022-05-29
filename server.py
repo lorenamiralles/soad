@@ -62,8 +62,6 @@ class Server:
 				self.waiting.append([client_con, matrix_id, matrix_a, matrix_b])
 				print(' workers queue:', len(self.workers))
 				print(' waiting queue:', len(self.waiting))
-			elif req == 'job finished':
-				print(' worker finished')
 			else:
 				print('	unknown client command: ', req)
 				self.listening = False

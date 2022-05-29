@@ -64,7 +64,7 @@ class Worker:
 			print('b: ', b)
 			print('c_i: ', c_i)
 			print('c_j: ', c_j)
-			for i in range(len(a)):
+			for i in range(len(a[0])):
 				suma += a[c_i][i] * b[i][c_j]
 			
 			result = {"matrix_id": self.trabajito.get("matrix_id"),
